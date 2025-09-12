@@ -4,16 +4,21 @@
 
 TVout TV;
 int x = 0;
+uint8_t circle_x;
+uint8_t circle_y;
+int dir = 1; //1=direita -1=esquerda
 //const char buff = "AAA";
 //const char a = "a";
 
 void setup() {
-    // TV.begin(_PAL, 640, 360);
-//     TV.begin(_NTSC,128,72);
+	// TV.begin(_PAL, 640, 360);
+// 	TV.begin(_NTSC,128,72);
    TV.begin(NTSC);
-//    TV.begin(_PAL,128,72);
-    // TV.begin(_PAL);
-    // Serial.begin(9600);
+   circle_x = TV.hres()/2;
+   circle_y = TV.vres()/2;
+//	TV.begin(_PAL,128,72);
+	// TV.begin(_PAL);
+	//Serial.begin(9600);
 }
 
 void loop() {
@@ -21,20 +26,21 @@ void loop() {
   // Serial.println(TV.hres());
   // Serial.printlnS(TV.vres());
   // TV.fill(WHITE);
-  // TV.draw_circle(2, TV.vres()/2, 2, WHITE, WHITE);
 
+  TV.draw_circle(circle_x, circle_y, 2, WHITE, WHITE);
+ 
 //  for(int i = 2; i < TV.hres()-4; i+=2){
-//    TV.draw_circle(i, TV.vres()/2, 2, WHITE,WHITE);
-//    TV.select_font(font4x6);
-//    TV.print(0,0,i);
-//    delay(50);
-//    TV.clear_screen();
+//	TV.draw_circle(i, TV.vres()/2, 2, WHITE,WHITE);
+//	TV.select_font(font4x6);
+//	TV.print(0,0,i);
+//	delay(50);
+//	TV.clear_screen();
 //  }
 //  for(int j = TV.hres()-4; j > 2; j-=2){
-//    TV.draw_circle(j, TV.vres()/2, 2, WHITE,WHITE);
-//    TV.print(0,0,j);
-//    delay(50);
-//    TV.clear_screen();
+//	TV.draw_circle(j, TV.vres()/2, 2, WHITE,WHITE);
+//	TV.print(0,0,j);
+//	delay(50);
+//	TV.clear_screen();
 //  }
   TV.draw_rect(0, 6, 122, 88, WHITE);
 
@@ -67,27 +73,33 @@ void loop() {
   x = TV.vres();
   TV.print(x);
   TV.delay_frame(1);
+  delay(100);
   TV.clear_screen();
+  circle_x = circle_x + dir;
+  //circle_y = circle_y + 1;
+
+  if(circle_x >= 120 | circle_x <= 0){
+	dir *= -1;
+  }
+  Serial.println(dir);
 }
 
 /*
 /* Draw a line from one point to another
  *
  * Arguments:
- *	x0:
- *		The x coordinate of point 0.
- *	y0:
- *		The y coordinate of point 0.
- *	x1:
- *		The x coordinate of point 1.
- *	y1:
- *		The y coordinate of point 1.
- *	c:
- *		The color of the line.
- *		(see color note at the top of this file)
+ *  x0:
+ *	The x coordinate of point 0.
+ *  y0:
+ *	The y coordinate of point 0.
+ *  x1:
+ *	The x coordinate of point 1.
+ *  y1:
+ *	The y coordinate of point 1.
+ *  c:
+ *	The color of the line.
+ *	(see color note at the top of this file)
  
- Patched to allow support for the Arduino Leonardo 
+ Patched to allow support for the Arduino Leonardo
 void TVout::draw_line(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, char c) {
-
-
 */
