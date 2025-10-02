@@ -2,6 +2,10 @@
 #include <video_gen.h>
 #include <fontALL.h>
 
+#define MENU 1
+#define JOGO 2
+#define VITORIA 3
+
 TVout TV;
 int x = 0;
 uint8_t circle_x;
@@ -12,12 +16,12 @@ int p1_cima, p1_baixo, p2_cima, p2_baixo;
 int p1_pontuacao=0, p2_pontuacao=0;
 unsigned long clique = 0;
 char last_state = (1<<PD0);
-//const char buff = "AAA";
-//const char a = "a";
+uint8_t estado;
+uint8_t jogador_vitorioso;
+char leitura;
 
 void setup() {
 
-  
   // TV.begin(_PAL, 640, 360);
 //  TV.begin(_NTSC,128,72);
    TV.begin(NTSC);
@@ -27,6 +31,7 @@ void setup() {
    PORTD |= (1<<PD0); // PD6 pull-up
    //Aleatoriza a 'seed'
    srand(analogRead(A0) + analogRead(A1));
+   estado = MENU;
 
    //Decide qual direção ele vai ir no começo da partida.
    if((rand() % 100) >= 50){
@@ -41,6 +46,44 @@ void setup() {
 }
 
 void loop() {
+  if(estado == MENU){
+    menu();
+  }
+  else if(estado == JOGO){
+    jogo();
+  }else if(estado == VITORIA){
+    vitoria();
+  }
+
+  TV.delay_frame(7);  
+  TV.clear_screen();
+
+}
+
+void menu(){
+    TV.draw_rect(0, 0, 122, 88, WHITE);
+    TV.select_font(font6x8);
+    TV.print(45, 10, "P O N G");
+    
+    TV.select_font(font4x6);
+    TV.print(50,50, "INICIAR");
+
+    leitura = PIND & (1<<PD0);
+  
+    if (leitura!=last_state && (millis()-clique)>1) {
+      clique = millis();
+ 
+      if (leitura == 0){
+
+          estado = JOGO;
+      }
+    }
+  
+  last_state = leitura;
+
+}
+
+void jogo(){
   // TV.select_font(font8x8);
   // Serial.println(TV.hres());
   // Serial.printlnS(TV.vres());
@@ -98,8 +141,7 @@ void loop() {
   //x = TV.vres();
   //TV.print(x);
  // delay(15);
-  TV.delay_frame(7);
-  TV.clear_screen();
+
   circle_x = circle_x + dir_x*2;
   circle_y = circle_y + dir_y;
 
@@ -157,6 +199,13 @@ void loop() {
   dir_y= 0;
   p1_pontuacao += 1; //Aumenta pontuação do Player 1
 
+  if(p1_pontuacao == 5){
+
+    estado = VITORIA;
+
+    jogador_vitorioso = 1;
+  }
+
   //Inicializa a posição da bola
   circle_x = TV.hres()/2;
   circle_y = TV.vres()/2;
@@ -167,50 +216,44 @@ void loop() {
   dir_y= 0;
   p2_pontuacao += 1; //Aumenta pontuação do Player 2
 
+  if(p2_pontuacao == 5){
+
+    estado = VITORIA;
+
+    jogador_vitorioso = 2;
+  }
+
   //Inicializa a posição da bola
   circle_x = TV.hres()/2;
   circle_y = TV.vres()/2;
   }
-    char leitura = PIND & (1<<PD0);
-  
-  if (leitura!=last_state && (millis()-clique)>1) {
-    clique = millis();
- 
-    if (leitura == 0){
-    p1_pontuacao=0; // ação de quando o botão for clicado
-    p2_pontuacao=0;
-    circle_x = TV.hres()/2;
-    circle_y = TV.vres()/2;
-    if((rand() % 100) >= 50){
-      dir_x = 1; // Esquerda -> Direita
-      }
-    else{
-      dir_x = -1; // Direita -> Esquerda
-      }
-    }
-  }
-  
-  last_state = leitura;
+
 }
 
-/*
-/* Draw a line from one point to another
- *
- * Arguments:
- *  x0:
- *  The x coordinate of point 0.
- *  y0:
- *  The y coordinate of point 0.
- *  x1:
- *  The x coordinate of point 1.
- *  y1:
- *  The y coordinate of point 1.
- *  c:
- *  The color of the line.
- *  (see color note at the top of this file)
+void vitoria(){  
+    TV.draw_rect(0, 0, 122, 88, WHITE);
+    TV.select_font(font6x8);
+    
+    TV.print(45, 10, "P O N G");
+    
+    if(jogador_vitorioso == 1){
+      TV.println(12, TV.vres()/2, "JOGADOR 1 VENCEU");
+    }
+    else{
+      TV.println(12, TV.vres()/2, "JOGADOR 2 VENCEU");
+    }
+    TV.select_font(font4x6);
+    TV.print(2,(TV.vres()/2)+20, "Pressione o botao para o menu.");
+
+    leitura = PIND & (1<<PD0);
+    if (leitura!=last_state && (millis()-clique)>1) {
+      clique = millis();
  
- Patched to allow support for the Arduino Leonardo
-void TVout::draw_line(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, char c) {
-
-
-*/
+      if (leitura == 0){
+          estado = MENU;
+          p1_pontuacao = 0;
+          p2_pontuacao = 0;
+      }
+    }
+    last_state = leitura;
+}
