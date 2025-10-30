@@ -1,25 +1,27 @@
 #include <TVout.h>
-#include <video_gen.h>
 #include <fontALL.h>
+#include <video_gen.h>
 
 #define MENU 1
 #define JOGO 2
 #define VITORIA 3
 #define TREINO 4
 #define TREINO_FIM 5
+#define VEL_X 2
+#define VEL_Y 2
 
 TVout TV;
 int x = 0;
 uint8_t circle_x;
 uint8_t circle_y;
-int dir_x; //1=direita, -1=esquerda
-int dir_y = 0; //1=cima, 0=reto, -1=baixo
+int dir_x;      // 1=direita, -1=esquerda
+int dir_y = 0;  // 1=cima, 0=reto, -1=baixo
 int p1_cima, p1_baixo, p2_cima, p2_baixo;
-int p1_pontuacao=0, p2_pontuacao=0;
+int p1_pontuacao = 0, p2_pontuacao = 0;
 unsigned long clique = 0;
 unsigned long clique_2 = 0;
-char last_state = (1<<PD0);
-char last_state_2 = (1<<PD1);
+char last_state = (1 << PD0);
+char last_state_2 = (1 << PD1);
 uint8_t estado;
 uint8_t selecao;
 uint8_t jogador_vitorioso;
@@ -27,374 +29,312 @@ char leitura;
 char controle;
 
 void setup() {
+  //TV.begin(_NTSC, 128, 72);
+  TV.begin(NTSC);
+  circle_x = TV.hres() / 2;
+  circle_y = TV.vres() / 2;
+  DDRD &= ~(1 << PD0);  // PD6 entrada
+  PORTD |= (1 << PD0);  // PD6 pull-up
+  // Aleatoriza a 'seed'
+  srand(analogRead(A0) + analogRead(A1));
+  estado = MENU;
+  selecao = JOGO;
 
-  // TV.begin(_PAL, 640, 360);
-//  TV.begin(_NTSC,128,72);
-   TV.begin(NTSC);
-   circle_x = TV.hres()/2;
-   circle_y = TV.vres()/2;
-   DDRD &= ~(1<<PD0); // PD6 entrada
-   PORTD |= (1<<PD0); // PD6 pull-up
-   //Aleatoriza a 'seed'
-   srand(analogRead(A0) + analogRead(A1));
-   estado = MENU;
-   selecao = JOGO;
-
-   //Decide qual direção ele vai ir no começo da partida.
-   if((rand() % 100) >= 50){
-    dir_x = 1; // Esquerda -> Direita
-   }
-   else{
-    dir_x = -1; // Direita -> Esquerda
-   }
-//  TV.begin(_PAL,128,72);
-  // TV.begin(_PAL);
-  //Serial.begin(9600);
+  
 }
+
+void menu();
+void jogo();
+void treino();
+void vitoria();
+void treino_fim();
 
 void loop() {
   srand(analogRead(A0) + analogRead(A1));
 
-  if(estado == MENU){
+  switch (estado)
+  {
+  case MENU:
     menu();
-  }else if(estado == JOGO){
+    break;
+  case JOGO:
     jogo();
-  }else if(estado == TREINO){
+    break;
+  case TREINO:
     treino();
-  }else if(estado == VITORIA){
+    break;
+  case VITORIA:
     vitoria();
-  }else if(estado == TREINO_FIM){
-    treinoFim();
+    break;
+  case TREINO_FIM:
+    treino_fim();
+    break;
   }
 
-  TV.delay_frame(3);  
+  TV.delay_frame(3);
   TV.clear_screen();
-
 }
 
-void menu(){
-    TV.draw_rect(0, 0, 122, 88, WHITE);
-    TV.select_font(font6x8);
-    TV.print(42, 10, "P O N G");
-    
-    TV.select_font(font4x6);
-    if(selecao == JOGO){
-      TV.print(50,50, ">");
-    } else {
-      TV.print(50,60, ">");
-    }
-    TV.print(55,50, "PVP");
-    TV.print(55,60, "TREINO");
-
-    leitura = PIND & (1<<PD0);
-    controle = PIND & (1<<PD1);
-      
-    if (leitura!=last_state && (millis()-clique)>1) {
-      clique = millis();
- 
-      if (leitura == 0){
-
-          estado = selecao;
-      }
-    }
-    last_state = leitura;
-    if (controle!=last_state_2 && (millis()-clique_2)>1) {
-      clique_2 = millis();
- 
-      if (controle == 0){
-        if (selecao == JOGO){
-          selecao = TREINO;
-        }else{
-          selecao = JOGO;
-        }
-      }
-    }
-  
-  last_state_2 = controle;
-
-}
-
-void jogo(){
-  // TV.select_font(font8x8);
-  // Serial.println(TV.hres());
-  // Serial.printlnS(TV.vres());
-  // TV.fill(WHITE);
-  
-  TV.draw_circle(circle_x, circle_y, 2, WHITE, WHITE);
- 
-//  for(int i = 2; i < TV.hres()-4; i+=2){
-//  TV.draw_circle(i, TV.vres()/2, 2, WHITE,WHITE);
-//  TV.select_font(font4x6);
-//  TV.print(0,0,i);
-//  delay(50);
-//  TV.clear_screen();
-//  }
-//  for(int j = TV.hres()-4; j > 2; j-=2){
-//  TV.draw_circle(j, TV.vres()/2, 2, WHITE,WHITE);
-//  TV.print(0,0,j);
-//  delay(50);
-//  TV.clear_screen();
-//  }
-  TV.draw_rect(0, 6, 122, 88, WHITE);
-
-  x = analogRead(A0);
-  TV.select_font(font4x6);
-  // TV.print(8,0,x);
-  x = map(x, 0, 1023, 20, 80);
-
-  // TV.print(8,6,x);
-  TV.print(8,0, p1_pontuacao);
-  p1_cima = x+12;
-  p1_baixo = x-12;
-  TV.draw_line(5, p1_baixo, 5, p1_cima, WHITE);
-  // TV.set_pixel(x, TV.vres()/2 - 10, WHITE);
-  // TV.set_pixel(5, x, WHITE);
-
-  x = analogRead(A1);
-  TV.select_font(font4x6);
-  // TV.println(108,0,x);
-  // x = map(x, 0, 1023, 12, 110);
-  x = map(x, 0, 1023, 20, 80);
-  // TV.println(108,6,x);
-  //TV.println(108,0,x);
-  TV.print(108,0, p2_pontuacao);
-  // TV.set_pixel(x, TV.vres()/2 + 10, WHITE);
-  // TV.set_pixel(117, x, WHITE);
-  p2_cima = x+12;
-  p2_baixo = x-12;
-  TV.draw_line(117, p2_baixo, 117, p2_cima, WHITE);
-
-  //Comentado 18/09/2025
-  //TV.print(4,72,"Resolucao: ");
-  //x = TV.hres();
-  //TV.print(x);
-  //TV.print("x");
-  //x = TV.vres();
-  //TV.print(x);
- // delay(15);
-
-  circle_x = circle_x + dir_x*2;
-  circle_y = circle_y + dir_y;
-
-  //colisão da bolinha
-  //batendo no P1 ou na quina
-  if(circle_x == 8 || circle_x == 7){
-  //bateu no meio
-  if(circle_y <= p1_cima-6 && circle_y >= p1_baixo+6){
-    dir_y = 0;
-    dir_x *= -1;
-  }
-  //bateu em cima
-  else if(circle_y <= p1_cima && circle_y >= p1_cima-5){
-    dir_y= 2;
-    dir_x *= -1;
-  }
-  //bateu em baixo
-  else if(circle_y >= p1_baixo && circle_y <= p1_baixo+5){
-    dir_y= -2;
-    dir_x *= -1;
-  }
-  }
-  //batendo no P2 ou na
-  if(circle_x == 115 || circle_x ==114){
-  //bateu no meio
-  if(circle_y <= p2_cima-6 && circle_y >= p2_baixo+6){
-    dir_y = 0;
-    dir_x *= -1;
-  }
-  //bateu em cima
-  else if(circle_y <= p2_cima && circle_y >= p2_cima-5){
-    dir_y= 2;
-    dir_x *= -1;
-  }
-  //bateu em baixo
-  else if(circle_y >= p2_baixo && circle_y <= p2_baixo+5){
-    dir_y= -2;
-    dir_x *= -1;
-  }
-  }
-
-  //colisão em cima
-  if(circle_y <= 8){
-  dir_y *= -1;
-  }
- 
-  //colisão em baixo
-  if(circle_y >= 91){
-  dir_y *= -1;
-  }
-
-  //Bateu na direita
-  if(circle_x >= 120){
-  dir_x *= -1;
-  dir_y= 0;
-  p1_pontuacao += 1; //Aumenta pontuação do Player 1
-
-  if(p1_pontuacao == 5){
-
-    estado = VITORIA;
-
-    jogador_vitorioso = 1;
-  }
-
-  //Inicializa a posição da bola
-  circle_x = TV.hres()/2;
-  circle_y = TV.vres()/2;
-  }
-  //Bateu na esquerda
-  else if(circle_x <= 2){
-  dir_x *= -1;
-  dir_y= 0;
-  p2_pontuacao += 1; //Aumenta pontuação do Player 2
-
-  if(p2_pontuacao == 5){
-
-    estado = VITORIA;
-
-    jogador_vitorioso = 2;
-  }
-
-  //Inicializa a posição da bola
-  circle_x = TV.hres()/2;
-  circle_y = TV.vres()/2;
-  }
-
-}
-
-void vitoria(){  
+void menu() {
   TV.draw_rect(0, 0, 122, 88, WHITE);
   TV.select_font(font6x8);
-  
   TV.print(42, 10, "P O N G");
-  
-  if(jogador_vitorioso == 1){
-    TV.println(12, TV.vres()/2, "JOGADOR 1 VENCEU");
+
+  TV.select_font(font4x6);
+  TV.print(55, 50, "PVP");
+  TV.print(55, 60, "TREINO");
+  if (selecao == JOGO) // Seta para mostrar opção selecionada
+  {
+    TV.print(50, 50, ">");
+  } else {
+    TV.print(50, 60, ">");
   }
-  else{
-    TV.println(12, TV.vres()/2, "JOGADOR 2 VENCEU");
+
+  leitura = PIND & (1 << PD0);
+  controle = PIND & (1 << PD1);
+
+
+  if (leitura != last_state && (millis() - clique) > 1) // Botão para escolher opção selecionada
+  {
+    clique = millis();
+    if (leitura == 0) 
+    {
+      estado = selecao;
+      // Decide qual direção ele vai ir no começo da partida.
+      if ((rand() % 2) == 0) {
+        dir_x = 1;    // Esquerda -> Direita
+      } else {
+        dir_x = -1;   // Direita -> Esquerda
+      }
+    }
+  }
+  last_state = leitura;
+
+  if (controle != last_state_2 && (millis() - clique_2) > 1)  // Botão para alterar opção selecionada
+  {
+    clique_2 = millis();
+
+    if (controle == 0) {
+      if (selecao == JOGO) 
+      {
+        selecao = TREINO;
+      } else {
+        selecao = JOGO;
+      }
+    }
+  }
+
+  last_state_2 = controle;
+}
+
+void move_jogador_1()
+{
+  x = analogRead(A0);                           // Lê valor do potenciometro
+  x = map(x, 0, 1023, 20, 80);                  // O tranforma em um valor entre 20 e 80
+  p1_cima = x + 12;
+  p1_baixo = x - 12;                            // Utiliza o valor conseguido com a leitura para determinar a posição do jogador
+  TV.draw_line(5, p1_baixo, 5, p1_cima,WHITE);  // Desenha o personagem do jogador
+}
+
+void move_jogador_2()
+{
+  x = analogRead(A1);                               // Lê valor do potenciometro
+  x = map(x, 0, 1023, 20, 80);                      // O tranforma em um valor entre 20 e 80
+  p2_cima = x + 12;
+  p2_baixo = x - 12;                                // Utiliza o valor conseguido com a leitura para determinar a posição do jogador
+  TV.draw_line(117, p2_baixo, 117, p2_cima,WHITE);  // Desenha o personagem do jogador
+}
+
+void chute_jogador_1()
+{
+  dir_x = 1;
+  if (circle_y <= p1_cima && circle_y > p1_baixo + 16)        // bateu em cima
+  {
+    dir_y = 1;
+  }
+  if (circle_y <= p1_cima - 8 && circle_y > p1_baixo + 8)     // bateu no meio
+  {
+    dir_y = 0;
+  }
+  if (circle_y <= p1_cima - 16 && circle_y >= p1_baixo)       // bateu em baixo
+  {
+    dir_y = -1;
+  }
+}
+
+void chute_jogador_2()
+{
+  dir_x = -1;
+  if (circle_y <= p2_cima && circle_y > p2_baixo + 16)    // bateu em cima
+  {
+    dir_y = 1;
+  }
+  if (circle_y <= p2_cima - 8 && circle_y > p2_baixo + 8)    // bateu no meio
+  {
+    dir_y = 0;
+  }
+  if (circle_y <= p2_cima - 16 && circle_y >= p2_baixo)    // bateu em baixo
+  {
+    dir_y = -1;
+  }
+}
+
+void jogo()
+{
+  TV.draw_circle(circle_x, circle_y, 2, WHITE, WHITE);  // Desenha a bola
+  TV.draw_rect(0, 6, 122, 88, WHITE);                   // Desenha o mapa
+  TV.select_font(font4x6);                              // Seleciona fonte para escrever pontuação
+  TV.print(8, 0, p1_pontuacao);                         // Escreve a pontuação do jogador 1
+  TV.print(108, 0, p2_pontuacao);                       // Escreve a pontuação do jogador 2
+
+  move_jogador_1();
+  move_jogador_2();
+
+  circle_x = circle_x + dir_x * VEL_X;
+  circle_y = circle_y + dir_y * VEL_Y;  // Calcula a posição da bola
+
+  if ((circle_x == 8 || circle_x == 7) && (circle_y <= p1_cima && circle_y >= p1_baixo))  // Colisão no jogador 1
+  {
+    chute_jogador_1();
+  }
+  if ((circle_x == 115 || circle_x == 114) && (circle_y <= p2_cima && circle_y >= p2_baixo))  // Colisão no jogador 2
+  {
+    chute_jogador_2();
+  }
+
+  if (circle_y <= 8)  // colisão em cima
+  {
+    dir_y = 1;
+  }
+
+  if (circle_y >= 91)  // colisão em baixo
+  {
+    dir_y = -1;
+  }
+
+  if (circle_x >= 120)  // Bateu no gol atrás do jogador 2
+  {
+    dir_x = -1;
+    dir_y = 0;
+    p1_pontuacao++;  // Aumenta pontuação do jogador 1
+    if (p1_pontuacao == 5)  // Verifica vencedor
+    {
+      estado = VITORIA;
+      jogador_vitorioso = 1;
+    }
+    circle_x = TV.hres() / 2;   // Posiciona bola no centro do mapa
+    circle_y = TV.vres() / 2;
+  }
+
+  if (circle_x <= 2)  // Bateu no gol atrás do jogador 1
+  {
+    dir_x = 1;
+    dir_y = 0;
+    p2_pontuacao++;  // Aumenta pontuação do jogador 2
+    if (p2_pontuacao == 5)  // Verifica vencedor
+    {
+      estado = VITORIA;
+      jogador_vitorioso = 2;
+    }
+    circle_x = TV.hres() / 2;   // Posiciona bola no centro do mapa
+    circle_y = TV.vres() / 2;
+  }
+}
+
+void vitoria() {
+  TV.draw_rect(0, 0, 122, 88, WHITE);
+
+  TV.select_font(font6x8);
+  TV.print(42, 10, "P O N G");
+
+  if (jogador_vitorioso == 1) {
+    TV.println(12, TV.vres() / 2, "JOGADOR 1 VENCEU");
+  } else {
+    TV.println(12, TV.vres() / 2, "JOGADOR 2 VENCEU");
   }
   TV.select_font(font4x6);
-  TV.print(2,(TV.vres()/2)+20, "Pressione o botao para o menu.");
+  TV.print(2, (TV.vres() / 2) + 20, "Pressione o botao para o menu.");
 
-  leitura = PIND & (1<<PD0);
-  if (leitura!=last_state && (millis()-clique)>1) {
+  leitura = PIND & (1 << PD0);
+  if (leitura != last_state && (millis() - clique) > 1) {
     clique = millis();
 
-    if (leitura == 0){
-        estado = MENU;
-        p1_pontuacao = 0;
-        p2_pontuacao = 0;
+    if (leitura == 0) {
+      dir_y = 0;
+      estado = MENU;
+      p1_pontuacao = 0;
+      p2_pontuacao = 0;
     }
   }
   last_state = leitura;
 }
 
-void treino(){
-  TV.draw_circle(circle_x, circle_y, 2, WHITE, WHITE);
+void treino() {
 
-  TV.draw_rect(0, 6, 122, 88, WHITE);
+  TV.draw_circle(circle_x, circle_y, 2, WHITE, WHITE);  // Desenha a bola
+  TV.draw_rect(0, 6, 122, 88, WHITE);                   // Desenha o mapa
 
-  x = analogRead(A0);
-  TV.select_font(font4x6);
+  move_jogador_1();
+
+  circle_x = circle_x + dir_x * VEL_X;
+  circle_y = circle_y + dir_y * VEL_Y;
+
+  if ((circle_x == 8 || circle_x == 7) && (circle_y <= p1_cima && circle_y >= p1_baixo))  // Colisão no jogador 1
+  {
+    chute_jogador_1();
+  }
+
+  if (circle_y <= 8)  // colisão em cima
+  {
+    dir_y = 1;
+  }
+
+  if (circle_y >= 91)  // colisão em baixo
+  {
+    dir_y = -1;
+  }
   
-  x = map(x, 0, 1023, 20, 80);
-
-  p1_cima = x+12;
-  p1_baixo = x-12;
-  TV.draw_line(5, p1_baixo, 5, p1_cima, WHITE);
-
-  circle_x = circle_x + dir_x*2;
-  circle_y = circle_y + dir_y;
-
-  //colisão da bolinha
-  //batendo no P1 ou na quina
-  if(circle_x == 8 || circle_x == 7){
-    //bateu no meio
-    if(circle_y <= p1_cima-6 && circle_y >= p1_baixo+6){
+  if (circle_x >= 120)  // Bateu na direita
+  {
+    dir_x = -1;
+    switch(rand()%3)    // Gera numero aleatorio e o usa para decidir qual será a direção no eixo Y
+    {
+      case 0:
+      dir_y = 1;
+      break;
+      case 1:
       dir_y = 0;
-      dir_x *= -1;
-    }
-    //bateu em cima
-    else if(circle_y <= p1_cima && circle_y >= p1_cima-5){
-      dir_y= 2;
-      dir_x *= -1;
-    }
-    //bateu em baixo
-    else if(circle_y >= p1_baixo && circle_y <= p1_baixo+5){
-      dir_y= -2;
-      dir_x *= -1;
+      break;
+      case 2:
+      dir_y = -1;
+      break;
     }
   }
-  //batendo no P2 ou na
-  if(circle_x == 115 || circle_x ==114){
-    //bateu no meio
-    if(circle_y <= p2_cima-6 && circle_y >= p2_baixo+6){
-      dir_y = 0;
-      dir_x *= -1;
-    }
-    //bateu em cima
-    else if(circle_y <= p2_cima && circle_y >= p2_cima-5){
-      dir_y= 2;
-      dir_x *= -1;
-    }
-    //bateu em baixo
-    else if(circle_y >= p2_baixo && circle_y <= p2_baixo+5){
-      dir_y= -2;
-      dir_x *= -1;
-    }
-  }
-
-  //colisão em cima
-  if(circle_y <= 8){
-    dir_y *= -1;
-  }
-
-  //colisão em baixo
-  if(circle_y >= 91){
-    dir_y *= -1;
-  }
-
-  //Bateu na direita
-  if(circle_x >= 120){
-    dir_x *= -1;
-
-    int randAux = (rand() % 100);
-    if(randAux <= 33){
-      dir_y = 2; 
-    }else if(randAux <= 66){
-      dir_y = -2; 
-    }else{
-      dir_y = 0;
-    }
-
-  }
-  //Bateu na esquerda
-  else if(circle_x <= 2){
-  dir_x *= -1;
-  dir_y= 0;
-  p2_pontuacao += 1; //Aumenta pontuação do Player 2
-
-  estado = TREINO_FIM;
+  // Bateu na esquerda
+  if (circle_x <= 2) {
+    estado = TREINO_FIM;
   }
 }
-
-void treinoFim(){
+void treino_fim() {
   TV.draw_rect(0, 0, 122, 88, WHITE);
   TV.select_font(font6x8);
-  
-  TV.print(42, 10, "P O N G");
-  TV.println(23, TV.vres()/2, "FIM DE TREINO");
-  TV.select_font(font4x6);
-  TV.print(2,(TV.vres()/2)+20, "Pressione o botao para o menu.");
 
-  leitura = PIND & (1<<PD0);
-  if (leitura!=last_state && (millis()-clique)>1) {
+  TV.print(42, 10, "P O N G");
+  TV.println(23, TV.vres() / 2, "FIM DE TREINO");
+  TV.select_font(font4x6);
+  TV.print(2, (TV.vres() / 2) + 20, "Pressione o botao para o menu.");
+
+  leitura = PIND & (1 << PD0);
+  if (leitura != last_state && (millis() - clique) > 1) {
     clique = millis();
 
-    if (leitura == 0){
-        estado = MENU;
-        p1_pontuacao = 0;
-        p2_pontuacao = 0;
+    if (leitura == 0) {
+      circle_x = TV.hres() / 2;   // Posiciona bola no centro do mapa
+      circle_y = TV.vres() / 2;
+      dir_y = 0;
+      estado = MENU;
+      p1_pontuacao = 0;
+      p2_pontuacao = 0;
     }
   }
   last_state = leitura;
