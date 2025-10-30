@@ -29,7 +29,7 @@ char leitura;
 char controle;
 
 void setup() {
-  TV.begin(_NTSC, 128, 72);
+  //TV.begin(_NTSC, 128, 72);
   TV.begin(NTSC);
   circle_x = TV.hres() / 2;
   circle_y = TV.vres() / 2;
@@ -40,12 +40,7 @@ void setup() {
   estado = MENU;
   selecao = JOGO;
 
-  // Decide qual direção ele vai ir no começo da partida.
-  if ((rand() % 2) == 0) {
-    dir_x = 1;    // Esquerda -> Direita
-  } else {
-    dir_x = -1;   // Direita -> Esquerda
-  }
+  
 }
 
 void menu();
@@ -105,6 +100,12 @@ void menu() {
     if (leitura == 0) 
     {
       estado = selecao;
+      // Decide qual direção ele vai ir no começo da partida.
+      if ((rand() % 2) == 0) {
+        dir_x = 1;    // Esquerda -> Direita
+      } else {
+        dir_x = -1;   // Direita -> Esquerda
+      }
     }
   }
   last_state = leitura;
@@ -203,12 +204,12 @@ void jogo()
 
   if (circle_y <= 8)  // colisão em cima
   {
-    dir_y = -1;
+    dir_y = 1;
   }
 
   if (circle_y >= 91)  // colisão em baixo
   {
-    dir_y = 1;
+    dir_y = -1;
   }
 
   if (circle_x >= 120)  // Bateu no gol atrás do jogador 2
@@ -259,6 +260,7 @@ void vitoria() {
     clique = millis();
 
     if (leitura == 0) {
+      dir_y = 0;
       estado = MENU;
       p1_pontuacao = 0;
       p2_pontuacao = 0;
@@ -284,12 +286,12 @@ void treino() {
 
   if (circle_y <= 8)  // colisão em cima
   {
-    dir_y = -1;
+    dir_y = 1;
   }
 
   if (circle_y >= 91)  // colisão em baixo
   {
-    dir_y = 1;
+    dir_y = -1;
   }
   
   if (circle_x >= 120)  // Bateu na direita
@@ -327,6 +329,9 @@ void treino_fim() {
     clique = millis();
 
     if (leitura == 0) {
+      circle_x = TV.hres() / 2;   // Posiciona bola no centro do mapa
+      circle_y = TV.vres() / 2;
+      dir_y = 0;
       estado = MENU;
       p1_pontuacao = 0;
       p2_pontuacao = 0;
