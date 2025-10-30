@@ -42,7 +42,7 @@ void setup() {
 
   // Decide qual direção ele vai ir no começo da partida.
   if ((rand() % 2) == 0) {
-    dir_x = 1;    // Direita -> Esquerda
+    dir_x = 1;    // Esquerda -> Direita
   } else {
     dir_x = -1;   // Direita <- Esquerda
   }
