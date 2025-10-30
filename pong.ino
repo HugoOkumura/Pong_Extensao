@@ -57,20 +57,23 @@ void treino_fim();
 void loop() {
   srand(analogRead(A0) + analogRead(A1));
 
-  if (estado == MENU) {
+  switch (estado)
+  {
+  case MENU:
     menu();
-  }
-  if (estado == JOGO) {
+    break;
+  case JOGO:
     jogo();
-  }
-  if (estado == TREINO) {
+    break;
+  case TREINO:
     treino();
-  }
-  if (estado == VITORIA) {
+    break;
+  case VITORIA:
     vitoria();
-  }
-  if (estado == TREINO_FIM) {
+    break;
+  case TREINO_FIM:
     treino_fim();
+    break;
   }
 
   TV.delay_frame(3);
