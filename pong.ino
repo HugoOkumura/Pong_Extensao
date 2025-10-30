@@ -292,7 +292,7 @@ void treino() {
   if (circle_x >= 120)  // Bateu na direita
   {
     dir_x = -1;
-    switch(rand()%3)    // Gera numero aleatorio e o usa para dicidir qual será a direção no eixo Y
+    switch(rand()%3)    // Gera numero aleatorio e o usa para decidir qual será a direção no eixo Y
     {
       case 0:
       dir_y = 1;
